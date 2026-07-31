@@ -94,6 +94,19 @@ vendor/bin/pint --dirty --format agent
 vendor/bin/phpstan analyse --no-progress
 ```
 
+Laravel 12 and 13 are certified independently on PHP 8.4 using disposable,
+lock-free dependency resolutions:
+
+```bash
+composer compatibility:laravel-12
+composer compatibility:laravel-13
+```
+
+Each cell verifies resolved versions, Composer package discovery in a clean
+host, the full Pest suite, PHPStan, and Pint. See
+[Compatibility Matrix](docs/COMPATIBILITY_MATRIX.md) for support language,
+lock-file policy, CI prerequisites, and reproduction details.
+
 See [ARCHITECTURE.md](ARCHITECTURE.md), [GRAMMAR.md](GRAMMAR.md), and
 [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) for the durable boundary.
 See [Host Integration Examples](docs/HOST_INTEGRATION_EXAMPLES.md) for tested

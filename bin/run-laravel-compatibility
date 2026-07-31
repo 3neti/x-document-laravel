@@ -1,0 +1,162 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+$laravelMajor = (int) ($argv[1] ?? 0);
+
+if (! in_array($laravelMajor, [12, 13], true)) {
+    fwrite(STDERR, "Usage: php bin/run-laravel-compatibility <12|13>\n");
+    exit(2);
+}
+
+$packageRoot = dirname(__DIR__);
+$xDocumentRoot = getenv('X_DOCUMENT_PATH') ?: dirname($packageRoot).'/x-document';
+$xDocumentRoot = realpath($xDocumentRoot) ?: '';
+
+if ($xDocumentRoot === '' || ! is_file($xDocumentRoot.'/composer.json')) {
+    throw new RuntimeException('Set X_DOCUMENT_PATH to a checkout of 3neti/x-document.');
+}
+
+$workspace = sys_get_temp_dir().'/x-document-laravel-compatibility-'.bin2hex(random_bytes(8));
+$packageCopy = $workspace.'/x-document-laravel';
+$hostRoot = $workspace.'/host';
+
+/** @param list<string> $command */
+$run = static function (array $command, string $workingDirectory): void {
+    echo '$ '.implode(' ', array_map(escapeshellarg(...), $command))."\n";
+    $process = proc_open($command, [STDIN, STDOUT, STDERR], $pipes, $workingDirectory);
+
+    if (! is_resource($process) || proc_close($process) !== 0) {
+        throw new RuntimeException('Compatibility command failed: '.implode(' ', $command));
+    }
+};
+
+$remove = static function (string $path) use (&$remove): void {
+    if (! file_exists($path)) {
+        return;
+    }
+
+    if (is_file($path) || is_link($path)) {
+        if (! unlink($path)) {
+            throw new RuntimeException("Unable to remove {$path}.");
+        }
+
+        return;
+    }
+
+    foreach (new FilesystemIterator($path) as $entry) {
+        $remove($entry->getPathname());
+    }
+
+    if (! rmdir($path)) {
+        throw new RuntimeException("Unable to remove {$path}.");
+    }
+};
+
+$copyPackage = static function (string $source, string $destination): void {
+    $excludedRoots = ['.git', '.phpunit.cache', '.phpstan.cache', 'composer.lock', 'vendor'];
+
+    foreach (new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($source, FilesystemIterator::SKIP_DOTS),
+        RecursiveIteratorIterator::SELF_FIRST,
+    ) as $entry) {
+        $relativePath = substr($entry->getPathname(), strlen($source) + 1);
+        $root = explode(DIRECTORY_SEPARATOR, $relativePath, 2)[0];
+
+        if (in_array($root, $excludedRoots, true)) {
+            continue;
+        }
+
+        $target = $destination.'/'.$relativePath;
+        if ($entry->isDir()) {
+            if (! is_dir($target) && ! mkdir($target, 0777, true)) {
+                throw new RuntimeException("Unable to create {$target}.");
+            }
+        } elseif (! copy($entry->getPathname(), $target)) {
+            throw new RuntimeException("Unable to copy {$relativePath}.");
+        }
+    }
+};
+
+$phpFileHashes = static function (string $root): array {
+    $hashes = [];
+    foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root)) as $entry) {
+        if ($entry->isFile() && $entry->getExtension() === 'php' && ! str_contains($entry->getPathname(), '/vendor/')) {
+            $hashes[substr($entry->getPathname(), strlen($root) + 1)] = hash_file('sha256', $entry->getPathname());
+        }
+    }
+    ksort($hashes, SORT_STRING);
+
+    return $hashes;
+};
+
+try {
+    if (! mkdir($packageCopy, 0777, true)) {
+        throw new RuntimeException('Unable to create compatibility workspace.');
+    }
+
+    $copyPackage($packageRoot, $packageCopy);
+
+    $composerPath = $packageCopy.'/composer.json';
+    $composer = json_decode(file_get_contents($composerPath) ?: '', true, flags: JSON_THROW_ON_ERROR);
+    $composer['require-dev']['laravel/framework'] = '^'.$laravelMajor.'.0';
+    $composer['require-dev']['orchestra/testbench'] = $laravelMajor === 12 ? '^10.0' : '^11.0';
+    $composer['repositories'][0]['url'] = $xDocumentRoot;
+    $composer['repositories'][0]['options']['versions'] = ['3neti/x-document' => 'dev-main'];
+    file_put_contents($composerPath, json_encode($composer, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR)."\n");
+
+    echo "Laravel {$laravelMajor} compatibility cell on PHP ".PHP_VERSION."\n";
+    $run(['composer', 'update', '--no-interaction', '--prefer-dist', '--with-all-dependencies'], $packageCopy);
+    $run(['composer', 'validate', '--strict'], $packageCopy);
+    $run([PHP_BINARY, 'bin/verify-compatibility-versions.php', (string) $laravelMajor], $packageCopy);
+
+    if (! mkdir($hostRoot, 0777, true)) {
+        throw new RuntimeException('Unable to create package-discovery host.');
+    }
+
+    $hostComposer = [
+        'name' => '3neti/x-document-laravel-compatibility-host',
+        'type' => 'project',
+        'require' => [
+            'php' => '^8.4',
+            'laravel/framework' => '^'.$laravelMajor.'.0',
+            '3neti/x-document-laravel' => 'dev-main',
+        ],
+        'repositories' => [
+            [
+                'type' => 'path',
+                'url' => $packageCopy,
+                'options' => [
+                    'symlink' => false,
+                    'versions' => ['3neti/x-document-laravel' => 'dev-main'],
+                ],
+            ],
+            [
+                'type' => 'path',
+                'url' => $xDocumentRoot,
+                'options' => [
+                    'symlink' => false,
+                    'versions' => ['3neti/x-document' => 'dev-main'],
+                ],
+            ],
+        ],
+        'minimum-stability' => 'dev',
+        'prefer-stable' => true,
+    ];
+    file_put_contents($hostRoot.'/composer.json', json_encode($hostComposer, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR)."\n");
+    $run(['composer', 'update', '--no-interaction', '--prefer-dist', '--with-all-dependencies'], $hostRoot);
+    $run([PHP_BINARY, $packageCopy.'/bin/verify-host-package-discovery.php', $hostRoot], $hostRoot);
+
+    $run([$packageCopy.'/vendor/bin/pest', '--compact'], $packageCopy);
+    $run([$packageCopy.'/vendor/bin/phpstan', 'analyse', '--no-progress'], $packageCopy);
+    $beforeFormatting = $phpFileHashes($packageCopy);
+    $run([$packageCopy.'/vendor/bin/pint', '--format', 'agent'], $packageCopy);
+    if ($beforeFormatting !== $phpFileHashes($packageCopy)) {
+        throw new RuntimeException('Pint changed files in the isolated compatibility copy. Format the source package.');
+    }
+
+    echo "Laravel {$laravelMajor} compatibility: PASS\n";
+} finally {
+    $remove($workspace);
+}

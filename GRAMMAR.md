@@ -83,3 +83,21 @@ x-document. The HTTP response factory never selects representations.
 Application policy that maps lookup, authorization, request, integration, or
 implementation failures to HTTP responses. This package defines integration
 exceptions but does not assign status codes.
+
+## Compatibility Cell
+
+One isolated, lock-free dependency resolution for a declared PHP and Laravel
+major. A passing cell proves the resolved versions, package discovery in a
+clean host, runtime tests, static analysis, and formatting for that exact pair.
+
+## Runtime-Tested
+
+A compatibility claim backed by a completed compatibility cell. A satisfiable
+Composer constraint alone is only dependency-compatible and is not described
+as runtime-tested.
+
+## Development Lock
+
+An uncommitted local convenience that represents the current development
+environment. It is not compatibility evidence and is excluded from the package
+repository.

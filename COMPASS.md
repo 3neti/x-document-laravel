@@ -8,6 +8,8 @@
 
 **Completed correction:** Host Example Representation Metadata Correction
 
+**Completed milestone:** Laravel 12 and Laravel 13 Compatibility Matrix
+
 The package now converts an invariant-safe core browser host response into an
 exact Laravel/Symfony HTTP response without rendering or business behavior.
 Strong representation validators are emitted unchanged, while inbound
@@ -18,9 +20,15 @@ routes, controllers, policies, or orchestration.
 Styled examples use their matching styled format identifiers, with descriptor
 consistency protected by a complete representation dataset.
 
+The adapter's Laravel 12 and 13 declarations are now backed by isolated PHP 8.4
+runtime evidence, explicit resolved-version checks, and clean-host package
+discovery. The matrix does not change the adapter's runtime boundary.
+
 ## Recommended next slice
 
-> **Laravel 12 and Laravel 13 Compatibility Matrix**
+> **GNE → x-document Runtime Integration Vertical Slice**
 
-Exercise the same package and host-integration suite against both supported
-framework majors in CI without changing runtime behavior.
+Connect one accepted GNE subject through its resolved document, the x-document
+browser host response, and this Laravel HTTP adapter in a real authenticated
+host flow. Preserve all existing ownership boundaries and avoid broadening the
+adapter package.

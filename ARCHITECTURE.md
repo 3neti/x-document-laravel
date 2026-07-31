@@ -92,6 +92,20 @@ DocumentHttpResponseFactory
 Package discovery loads the provider. No application endpoints or middleware
 are registered.
 
+## Compatibility evidence
+
+Laravel compatibility is exercised outside the developer installation. A
+compatibility cell copies the package into a disposable directory, removes
+lock-derived assumptions, constrains Laravel and Testbench to the selected
+major, resolves dependencies, and asserts the actual framework, Testbench,
+Symfony HttpFoundation, PHP, and x-document versions. It then composes a clean
+host and proves that Laravel discovers the provider from package metadata and
+resolves the response factory binding.
+
+The cell runs the unchanged full suite, PHPStan, and Pint. Neither the matrix
+runner nor CI code enters `src/`; compatibility certification therefore adds
+development evidence without expanding production behavior.
+
 ## Host integration examples
 
 The executable controller, resolver, authorizer, allowlist, and routes live

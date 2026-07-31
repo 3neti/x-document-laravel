@@ -5,6 +5,11 @@
 - Composer package `3neti/x-document-laravel`.
 - Namespace `LBHurtado\XDocumentLaravel`.
 - Laravel 12/13 dependency constraints.
+- isolated PHP 8.4 / Laravel 12 and PHP 8.4 / Laravel 13 compatibility cells.
+- resolved-version assertions for Laravel, Testbench, Symfony HttpFoundation,
+  PHP, and x-document.
+- clean-host Composer package-discovery and container-binding verification.
+- GitHub Actions compatibility matrix plus reproducible local Composer scripts.
 - Laravel package discovery and singleton response-factory binding.
 - Exact inline-byte GET responses.
 - bodyless HEAD responses with representation length.
@@ -28,8 +33,8 @@
 - HTTP caching is deliberately fixed rather than host-configurable.
 - Conditional requests support `If-None-Match`; date validators and byte ranges
   are not implemented.
-- The package is constrained for Laravel 12 and 13; the current verification
-  environment exercises Laravel 13.
+- CI execution requires checkout access to the private `3neti/x-document`
+  repository through `X_DOCUMENT_TOKEN`.
 
 ## Deferred
 
@@ -38,6 +43,8 @@
 - streaming, range responses, output persistence, queues, and remote delivery;
 - rendering or representation compilation;
 - repository, lifecycle, workflow, settlement, and business behavior.
+- PHP 8.3 certification while `3neti/x-document` requires PHP 8.4;
+- Laravel 14 certification.
 
 This package is an adapter, not an application.
 

@@ -1,0 +1,38 @@
+name: Compatibility
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  laravel:
+    name: PHP 8.4 / Laravel ${{ matrix.laravel }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        laravel: ['12', '13']
+
+    steps:
+      - name: Check out x-document-laravel
+        uses: actions/checkout@v4
+        with:
+          path: x-document-laravel
+
+      - name: Check out x-document
+        uses: actions/checkout@v4
+        with:
+          repository: 3neti/x-document
+          token: ${{ secrets.X_DOCUMENT_TOKEN }}
+          path: x-document
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+          tools: composer:v2
+
+      - name: Run compatibility cell
+        working-directory: x-document-laravel
+        run: composer compatibility:laravel-${{ matrix.laravel }}

@@ -50,6 +50,12 @@
         }
     ],
     "scripts": {
+        "compatibility": [
+            "@compatibility:laravel-12",
+            "@compatibility:laravel-13"
+        ],
+        "compatibility:laravel-12": "@php bin/run-laravel-compatibility 12",
+        "compatibility:laravel-13": "@php bin/run-laravel-compatibility 13",
         "test": "pest --compact",
         "analyse": "phpstan analyse --no-progress",
         "format": "pint --format agent"

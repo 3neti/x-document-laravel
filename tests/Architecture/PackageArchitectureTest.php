@@ -111,3 +111,29 @@ it('keeps host application examples outside production runtime', function () {
             'ExceptionHandler',
         );
 });
+
+it('certifies Laravel 12 and 13 through isolated compatibility cells', function () {
+    $root = dirname(__DIR__, 2);
+    $composer = json_decode(file_get_contents($root.'/composer.json') ?: '', true, flags: JSON_THROW_ON_ERROR);
+    $workflow = file_get_contents($root.'/.github/workflows/compatibility.yml');
+    $runner = file_get_contents($root.'/bin/run-laravel-compatibility');
+
+    expect($composer['scripts']['compatibility:laravel-12'])
+        ->toBe('@php bin/run-laravel-compatibility 12')
+        ->and($composer['scripts']['compatibility:laravel-13'])
+        ->toBe('@php bin/run-laravel-compatibility 13')
+        ->and($workflow)->toContain(
+            "laravel: ['12', '13']",
+            "php-version: '8.4'",
+            'composer compatibility:laravel-${{ matrix.laravel }}',
+        )
+        ->and($runner)->toContain(
+            "'laravel/framework'",
+            "'orchestra/testbench'",
+            'verify-compatibility-versions.php',
+            'verify-host-package-discovery.php',
+            '/vendor/bin/pest',
+            '/vendor/bin/phpstan',
+            '/vendor/bin/pint',
+        );
+});
