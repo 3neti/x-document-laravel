@@ -13,12 +13,6 @@ final readonly class DocumentHttpRequestContext
         if (! in_array($method, ['GET', 'HEAD'], true)) {
             throw new \InvalidArgumentException('Document HTTP request method must be GET or HEAD.');
         }
-        if (
-            $ifNoneMatch !== null
-            && (str_contains($ifNoneMatch, "\r") || str_contains($ifNoneMatch, "\n"))
-        ) {
-            throw new \InvalidArgumentException('If-None-Match cannot contain line breaks.');
-        }
     }
 
     public static function fromLaravelRequest(Request $request): self

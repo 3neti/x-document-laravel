@@ -11,6 +11,6 @@ final readonly class DocumentConditionalRequestEvaluator
         HttpEntityTag $etag,
     ): bool {
         return $request->ifNoneMatch !== null
-            && $etag->matchesIfNoneMatch($request->ifNoneMatch);
+            && IfNoneMatch::parse($request->ifNoneMatch)->matches($etag);
     }
 }

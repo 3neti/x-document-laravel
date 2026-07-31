@@ -25,8 +25,17 @@ replacement.
 
 ## Conditional Match
 
-A strong match between the authoritative entity tag and one member of
-`If-None-Match`, or a wildcard match. A match yields `304 Not Modified`.
+A weak HTTP comparison between the authoritative strong entity tag and one
+member of `If-None-Match`, or a standalone wildcard match. Weakness prefixes
+are ignored; opaque values remain byte-sensitive. A match yields
+`304 Not Modified`.
+
+## If-None-Match
+
+Either `*` alone or an ordered comma-separated list of strong or weak quoted
+entity tags. Optional spaces or tabs may surround separators. Commas inside a
+quoted opaque value are data, not separators. Empty members, combined
+wildcards, controls, unquoted values, and malformed quotes are invalid.
 
 ## Representation Headers
 

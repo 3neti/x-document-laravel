@@ -67,3 +67,22 @@ it('declares package discovery and no routes views migrations or commands', func
             'publishes(',
         );
 });
+
+it('centralizes conditional entity-tag parsing outside the response factory', function () {
+    $root = dirname(__DIR__, 2);
+    $factory = file_get_contents($root.'/src/Http/LaravelDocumentHttpResponseFactory.php');
+    $evaluator = file_get_contents($root.'/src/Http/DocumentConditionalRequestEvaluator.php');
+    $parser = file_get_contents($root.'/src/Http/IfNoneMatch.php');
+
+    expect($factory)->toContain('DocumentConditionalRequestEvaluator')
+        ->not->toContain('If-None-Match', 'preg_split', 'explode(')
+        ->and($evaluator)->toContain('IfNoneMatch::parse')
+        ->and($parser)->not->toContain('preg_split', 'explode(')
+        ->and($factory.$evaluator.$parser)->not->toContain(
+            'If-Match',
+            'If-Modified-Since',
+            'If-Unmodified-Since',
+            'If-Range',
+            'Range',
+        );
+});

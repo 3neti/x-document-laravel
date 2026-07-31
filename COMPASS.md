@@ -2,8 +2,12 @@
 
 **Completed milestone:** Laravel HTTP Response Adapter Contract
 
+**Completed correction:** HTTP Conditional Entity-Tag Semantics Closure
+
 The package now converts an invariant-safe core browser host response into an
 exact Laravel/Symfony HTTP response without rendering or business behavior.
+Strong representation validators are emitted unchanged, while inbound
+`If-None-Match` follows weak HTTP comparison with quote-aware list parsing.
 
 ## Recommended next slice
 

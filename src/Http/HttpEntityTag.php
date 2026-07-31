@@ -6,7 +6,11 @@ use LBHurtado\XDocumentLaravel\Exceptions\InvalidEntityTag;
 
 final readonly class HttpEntityTag
 {
-    private function __construct(public string $value) {}
+    private function __construct(
+        public string $value,
+        private string $opaqueValue,
+        private bool $weak,
+    ) {}
 
     public static function fromCore(string $etag): self
     {
@@ -14,31 +18,31 @@ final readonly class HttpEntityTag
             throw new InvalidEntityTag('The core ETag must be one strongly quoted HTTP entity tag.');
         }
 
-        return new self($etag);
+        return new self($etag, substr($etag, 1, -1), false);
     }
 
-    public function matchesIfNoneMatch(string $header): bool
+    public static function fromHeaderValue(string $etag): self
     {
-        $header = trim($header);
-        if ($header === '') {
-            throw new InvalidEntityTag('If-None-Match cannot be empty.');
-        }
-        if ($header === '*') {
-            return true;
-        }
-        $candidates = preg_split('/\s*,\s*/', $header);
-        if (! is_array($candidates)) {
-            throw new InvalidEntityTag('If-None-Match is malformed.');
-        }
-        foreach ($candidates as $candidate) {
-            if (preg_match('/^(?:W\/)?"[\x21\x23-\x7E]+"$/D', $candidate) !== 1) {
-                throw new InvalidEntityTag('If-None-Match contains a malformed entity tag.');
-            }
-            if (! str_starts_with($candidate, 'W/') && hash_equals($this->value, $candidate)) {
-                return true;
-            }
+        $matches = [];
+        if (preg_match('/^(W\/)?"([\x21\x23-\x7E\x80-\xFF]*)"$/D', $etag, $matches) !== 1) {
+            throw new InvalidEntityTag('If-None-Match contains a malformed entity tag.');
         }
 
-        return false;
+        return new self($etag, $matches[2], $matches[1] === 'W/');
+    }
+
+    public function opaqueValue(): string
+    {
+        return $this->opaqueValue;
+    }
+
+    public function isWeak(): bool
+    {
+        return $this->weak;
+    }
+
+    public function weaklyEquals(self $other): bool
+    {
+        return hash_equals($this->opaqueValue, $other->opaqueValue);
     }
 }

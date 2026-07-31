@@ -7,10 +7,8 @@ use LBHurtado\XDocument\Browser\Host\BrowserRepresentation;
 use LBHurtado\XDocument\Browser\Host\BrowserRepresentationDescriptor;
 use LBHurtado\XDocument\Contract\DocumentOutput;
 use LBHurtado\XDocumentLaravel\Data\DocumentHttpRequestContext;
-use LBHurtado\XDocumentLaravel\Exceptions\InvalidEntityTag;
 use LBHurtado\XDocumentLaravel\Exceptions\UnsafeDocumentFilename;
 use LBHurtado\XDocumentLaravel\Http\DocumentContentDisposition;
-use LBHurtado\XDocumentLaravel\Http\HttpEntityTag;
 use LBHurtado\XDocumentLaravel\Http\LaravelDocumentHttpResponseFactory;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -67,6 +65,13 @@ it('returns canonical JSON and arbitrary bytes without reserialization', functio
         ->and((new LaravelDocumentHttpResponseFactory)->make(hostResponse($binary))->getContent())->toBe($binary);
 });
 
+it('returns styled semantic HTML without altering any byte', function () {
+    $html = "<!doctype html>\n<style>.document { color: #123456; }</style>\n<article class=\"document\">Exact</article>\n";
+
+    expect((new LaravelDocumentHttpResponseFactory)->make(hostResponse($html))->getContent())
+        ->toBe($html);
+});
+
 it('honors attachment disposition and encodes safe Unicode filenames', function () {
     $response = (new LaravelDocumentHttpResponseFactory)->make(hostResponse(
         filename: 'Résumé final.html',
@@ -93,12 +98,13 @@ it('rejects unsafe filename header values', function (string $filename) {
     'line feed' => ["document\nunsafe.html"],
 ])->throws(UnsafeDocumentFilename::class);
 
-it('uses exact strong ETag matching including lists and wildcard', function () {
+it('uses weak If-None-Match comparison including lists and wildcard for GET', function () {
     $source = hostResponse();
     $factory = new LaravelDocumentHttpResponseFactory;
 
     foreach ([
         $source->etag,
+        'W/'.$source->etag,
         '"sha256:'.str_repeat('0', 64).'", '.$source->etag,
         '*',
     ] as $ifNoneMatch) {
@@ -109,28 +115,38 @@ it('uses exact strong ETag matching including lists and wildcard', function () {
     }
 });
 
-it('does not treat weak or different entity tags as a strong match', function () {
+it('returns a bodyless 304 for a weakly matching HEAD request', function () {
     $source = hostResponse();
-    $factory = new LaravelDocumentHttpResponseFactory;
-
-    expect($factory->make(
+    $response = (new LaravelDocumentHttpResponseFactory)->make(
         $source,
-        DocumentHttpRequestContext::get('W/'.$source->etag),
-    )->getStatusCode())->toBe(200)
-        ->and($factory->make(
-            $source,
-            DocumentHttpRequestContext::get('"sha256:'.str_repeat('0', 64).'"'),
-        )->getStatusCode())->toBe(200);
+        DocumentHttpRequestContext::head('W/'.$source->etag),
+    );
+
+    expect($response->getStatusCode())->toBe(304)
+        ->and($response->getContent())->toBe('')
+        ->and($response->headers->get('ETag'))->toBe($source->etag);
 });
 
-it('rejects malformed conditional entity tags', function (string $value) {
-    HttpEntityTag::fromCore(hostResponse()->etag)->matchesIfNoneMatch($value);
-})->with([
-    'empty' => [''],
-    'bare digest' => ['sha256:abc'],
-    'unterminated' => ['"sha256:abc'],
-    'empty list member' => ['"sha256:abc",'],
-])->throws(InvalidEntityTag::class);
+it('returns unchanged GET and HEAD responses for non-matching validators', function () {
+    $body = "exact\nbytes\n";
+    $source = hostResponse($body);
+    $factory = new LaravelDocumentHttpResponseFactory;
+
+    $get = $factory->make(
+        $source,
+        DocumentHttpRequestContext::get('W/"different"'),
+    );
+    $head = $factory->make(
+        $source,
+        DocumentHttpRequestContext::head('W/"different"'),
+    );
+
+    expect($get->getStatusCode())->toBe(200)
+        ->and($get->getContent())->toBe($body)
+        ->and($head->getStatusCode())->toBe(200)
+        ->and($head->getContent())->toBe('')
+        ->and($head->headers->get('Content-Length'))->toBe((string) strlen($body));
+});
 
 it('returns no HEAD body while retaining GET representation length', function () {
     $body = "exact\nbytes\n";
@@ -161,10 +177,3 @@ it('extracts only method and If-None-Match from a Laravel request', function () 
 it('rejects unsupported methods at the minimal request boundary', function () {
     new DocumentHttpRequestContext('POST', null);
 })->throws(InvalidArgumentException::class);
-
-it('rejects line breaks at the conditional request boundary', function (string $value) {
-    DocumentHttpRequestContext::get($value);
-})->with([
-    'carriage return' => ["\"etag\"\runsafe"],
-    'line feed' => ["\"etag\"\nunsafe"],
-])->throws(InvalidArgumentException::class);

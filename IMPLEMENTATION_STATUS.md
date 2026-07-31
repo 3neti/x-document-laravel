@@ -10,7 +10,8 @@
 - bodyless HEAD responses with representation length.
 - core media type, disposition, filename, checksum, byte length, and ETag
   preservation.
-- strong `If-None-Match`, wildcard, and comma-list evaluation.
+- weak `If-None-Match` comparison against strong core ETags.
+- quote-aware entity-tag lists and standalone wildcard evaluation.
 - `304 Not Modified`.
 - deterministic, Unicode-aware, injection-safe `Content-Disposition`.
 - private/no-cache and nosniff response policy.

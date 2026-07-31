@@ -66,8 +66,9 @@ the `BrowserHostResponse`.
 
 - GET returns the exact inline bytes.
 - HEAD returns no body and preserves the GET representation length.
-- `If-None-Match` accepts `*` and comma-separated entity tags.
-- A matching strong ETag returns `304 Not Modified`.
+- `If-None-Match` uses HTTP weak comparison and accepts standalone `*` or a
+  validated comma-separated entity-tag list.
+- A weakly matching validator returns `304 Not Modified`.
 - Content type, filename, disposition, checksum, length, and ETag come from the
   core response and are checked before delivery.
 - Cache policy is `private, no-cache`.
@@ -77,6 +78,12 @@ the `BrowserHostResponse`.
 
 The package deliberately registers no routes, controllers, views, middleware,
 migrations, commands, queues, or storage.
+
+The emitted ETag remains the strongly quoted, byte-exact validator supplied by
+core. Weak comparison applies only to inbound `If-None-Match`: both `"tag"` and
+`W/"tag"` match the same opaque value. Quoted commas remain part of an opaque
+tag; only commas outside quotes separate list members. Malformed lists,
+wildcard combinations, and control characters fail explicitly.
 
 ## Quality gates
 

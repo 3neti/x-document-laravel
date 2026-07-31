@@ -26,7 +26,7 @@ This package owns only:
 
 - safe mapping of those facts into HTTP headers and a response body;
 - GET and HEAD delivery semantics;
-- strong `If-None-Match` evaluation;
+- HTTP weak `If-None-Match` evaluation against the strong core validator;
 - safe `Content-Disposition` serialization;
 - defensive integrity checks at the integration boundary;
 - Laravel container registration.
@@ -61,10 +61,13 @@ length of the corresponding GET representation.
 
 ## Conditional requests
 
-The minimal request context carries only method and `If-None-Match`. Strong
-comparison is intentional: a weak candidate does not match the core strong
-validator. Wildcard and comma-separated values are supported. Malformed input
-fails explicitly instead of being silently ignored.
+The minimal request context carries only method and `If-None-Match`. Core still
+supplies a strong validator, but HTTP requires weak comparison for
+`If-None-Match`: weakness is ignored and the quoted opaque values are compared
+exactly. A focused parser recognizes separators only outside quotes, so a comma
+inside an opaque tag is preserved. Standalone wildcard and optional whitespace
+are supported. Wildcard combinations, empty members, controls, and malformed
+tags fail explicitly instead of being silently ignored.
 
 ## Security posture
 
