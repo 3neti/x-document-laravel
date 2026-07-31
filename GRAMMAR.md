@@ -66,3 +66,20 @@ encoding transformation.
 An explicit exception caused by unsafe HTTP input or an inconsistent core
 response. Unexpected implementation failures also propagate; they are not
 converted into ordinary document output.
+
+## Host Document Resolver
+
+An example-only application boundary that produces `BrowserHostResponse` after
+host-owned lookup, authorization, representation selection, and x-document
+resolution. It is not a production package contract.
+
+## Host Representation Allowlist
+
+An application-owned closed set of representations that may be requested from
+x-document. The HTTP response factory never selects representations.
+
+## Host Exception Translation
+
+Application policy that maps lookup, authorization, request, integration, or
+implementation failures to HTTP responses. This package defines integration
+exceptions but does not assign status codes.

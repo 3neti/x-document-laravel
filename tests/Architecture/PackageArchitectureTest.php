@@ -86,3 +86,28 @@ it('centralizes conditional entity-tag parsing outside the response factory', fu
             'Range',
         );
 });
+
+it('keeps host application examples outside production runtime', function () {
+    $root = dirname(__DIR__, 2);
+    $provider = file_get_contents($root.'/src/XDocumentLaravelServiceProvider.php');
+    $composer = json_decode(file_get_contents($root.'/composer.json') ?: '', true, flags: JSON_THROW_ON_ERROR);
+
+    expect(is_dir($root.'/tests/Fixtures/HostApplication'))->toBeTrue()
+        ->and(is_dir($root.'/src/Controllers'))->toBeFalse()
+        ->and(is_dir($root.'/src/Authorization'))->toBeFalse()
+        ->and(is_dir($root.'/routes'))->toBeFalse()
+        ->and($composer['autoload']['psr-4'])->not->toHaveKey(
+            'LBHurtado\\XDocumentLaravel\\Tests\\',
+        )
+        ->and($composer['autoload-dev']['psr-4'])->toHaveKey(
+            'LBHurtado\\XDocumentLaravel\\Tests\\',
+            'tests/',
+        )
+        ->and($provider)->not->toContain(
+            'HostApplication',
+            'loadRoutesFrom',
+            'Route::',
+            'policy(',
+            'ExceptionHandler',
+        );
+});

@@ -91,3 +91,11 @@ DocumentHttpResponseFactory
 
 Package discovery loads the provider. No application endpoints or middleware
 are registered.
+
+## Host integration examples
+
+The executable controller, resolver, authorizer, allowlist, and routes live
+under `tests/Fixtures/HostApplication` and Testbench feature tests. They are not
+autoloaded as production package classes and do not alter the service provider.
+The complete integration pattern is documented in
+[Host Integration Examples](docs/HOST_INTEGRATION_EXAMPLES.md).

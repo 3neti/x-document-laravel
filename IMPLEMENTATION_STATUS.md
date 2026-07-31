@@ -16,6 +16,10 @@
 - deterministic, Unicode-aware, injection-safe `Content-Disposition`.
 - private/no-cache and nosniff response policy.
 - unit, feature, integration, and architecture coverage.
+- executable Testbench host examples for direct and controller delivery,
+  authorization ordering, allowlisting, GET/HEAD, conditionals, dispositions,
+  JSON, semantic HTML, styled HTML, and styled composition HTML.
+- dedicated host integration guide and example-boundary ADR.
 
 ## Partial
 
@@ -34,3 +38,6 @@
 - repository, lifecycle, workflow, settlement, and business behavior.
 
 This package is an adapter, not an application.
+
+Example controllers, routes, resolvers, authorizers, and policies are test-only
+fixtures and are not production package capabilities.

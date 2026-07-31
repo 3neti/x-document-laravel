@@ -96,3 +96,6 @@ vendor/bin/phpstan analyse --no-progress
 
 See [ARCHITECTURE.md](ARCHITECTURE.md), [GRAMMAR.md](GRAMMAR.md), and
 [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) for the durable boundary.
+See [Host Integration Examples](docs/HOST_INTEGRATION_EXAMPLES.md) for tested
+direct, controller, authorization, allowlist, GET, HEAD, conditional, JSON,
+HTML, composition, inline, and attachment patterns.
