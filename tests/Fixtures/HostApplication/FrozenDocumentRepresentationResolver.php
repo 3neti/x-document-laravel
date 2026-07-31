@@ -11,6 +11,8 @@ final class FrozenDocumentRepresentationResolver implements HostDocumentRepresen
 {
     public int $invocations = 0;
 
+    private ?BrowserHostResponse $lastResolvedResponse = null;
+
     public function __construct(
         private readonly RecordingDocumentAuthorizer $authorization,
     ) {}
@@ -44,13 +46,21 @@ final class FrozenDocumentRepresentationResolver implements HostDocumentRepresen
             'résumé-document'.$suffix,
         );
 
-        return new BrowserHostResponse(
+        $this->lastResolvedResponse = new BrowserHostResponse(
             $descriptor,
             $output,
             $disposition,
             '"'.$output->checksum.'"',
             ['example' => true],
         );
+
+        return $this->lastResolvedResponse;
+    }
+
+    public function lastResolvedResponse(): BrowserHostResponse
+    {
+        return $this->lastResolvedResponse
+            ?? throw new \LogicException('The example resolver has not produced a response.');
     }
 
     /** @return array{string, string, string, string} */
@@ -70,13 +80,13 @@ final class FrozenDocumentRepresentationResolver implements HostDocumentRepresen
                 "<!doctype html>\n<article data-document=\"document-1\">Semantic</article>\n",
             ],
             ExampleRepresentation::StyledHtml => [
-                'browser-html/1.0',
+                'browser-html-styled/1.0',
                 'text/html; charset=utf-8',
                 '.styled.html',
                 "<!doctype html>\n<style>.document{color:#123456}</style>\n<article class=\"document\">Styled</article>\n",
             ],
             ExampleRepresentation::StyledCompositionHtml => [
-                'browser-composition-html/1.0',
+                'browser-composition-html-styled/1.0',
                 'text/html; charset=utf-8',
                 '.composition.styled.html',
                 "<!doctype html>\n<style>.composition{display:block}</style>\n<main class=\"composition\" data-interaction=\"approve\">Composed</main>\n",

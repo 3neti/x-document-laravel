@@ -20,6 +20,8 @@
   authorization ordering, allowlisting, GET/HEAD, conditionals, dispositions,
   JSON, semantic HTML, styled HTML, and styled composition HTML.
 - dedicated host integration guide and example-boundary ADR.
+- dataset-protected example descriptor mappings whose representation, format,
+  media type, and filename suffix identify the same output.
 
 ## Partial
 
@@ -41,3 +43,5 @@ This package is an adapter, not an application.
 
 Example controllers, routes, resolvers, authorizers, and policies are test-only
 fixtures and are not production package capabilities.
+Their deterministic bodies illustrate transport integration and are not
+canonical x-document compatibility fixtures.

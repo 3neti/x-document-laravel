@@ -98,6 +98,12 @@ It must not move those responsibilities into `DocumentHttpResponseFactory`.
 The deterministic fake used by the tests has no database, network, GNE, or
 business interpretation.
 
+The example fixture bodies are deterministic stand-ins for already-produced
+x-document representations. They are not canonical compatibility fixtures for
+the x-document representation grammars. Real hosts should obtain
+`BrowserHostResponse` from x-document rather than construct replacement
+representation grammars from these examples.
+
 ## Authorization placement
 
 Authorize before representation resolution and delivery. Authentication,
@@ -118,6 +124,15 @@ The test host uses `ExampleRepresentation` as an application-level allowlist:
 An unknown value is rejected before the resolver runs. Production hosts may
 choose a different allowlist, but must not pass arbitrary strings into
 x-document or ask the response factory to choose.
+
+The test fixture keeps representation metadata internally consistent:
+
+| Representation | Format | Media type | Filename suffix |
+|---|---|---|---|
+| `browser-json` | `browser/1.0` | `application/vnd.3neti.x-document.browser+json` | `.browser.json` |
+| `browser-html` | `browser-html/1.0` | `text/html; charset=utf-8` | `.html` |
+| `browser-html-styled` | `browser-html-styled/1.0` | `text/html; charset=utf-8` | `.styled.html` |
+| `browser-composition-html-styled` | `browser-composition-html-styled/1.0` | `text/html; charset=utf-8` | `.composition.styled.html` |
 
 ## Inline and attachment delivery
 

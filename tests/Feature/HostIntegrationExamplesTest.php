@@ -18,6 +18,8 @@ use LBHurtado\XDocumentLaravel\Tests\Fixtures\HostApplication\RecordingDocumentA
 beforeEach(function () {
     $authorization = new RecordingDocumentAuthorizer;
     $resolver = new FrozenDocumentRepresentationResolver($authorization);
+    $this->app->instance(RecordingDocumentAuthorizer::class, $authorization);
+    $this->app->instance(FrozenDocumentRepresentationResolver::class, $resolver);
     $this->app->instance(HostDocumentAuthorizer::class, $authorization);
     $this->app->instance(HostDocumentRepresentationResolver::class, $resolver);
 
@@ -38,6 +40,62 @@ beforeEach(function () {
         }
     });
 });
+
+it('maps every example representation to consistent descriptor metadata', function (
+    ExampleRepresentation $representation,
+    string $format,
+    string $mediaType,
+    string $suffix,
+    string $bodyCategory,
+) {
+    $authorization = $this->app->make(RecordingDocumentAuthorizer::class);
+    $resolver = $this->app->make(FrozenDocumentRepresentationResolver::class);
+    $authorization->assertMayView(null, 'document-1');
+
+    $host = $resolver->resolve(
+        'document-1',
+        $representation,
+        BrowserContentDisposition::Inline,
+    );
+
+    expect($host->descriptor->representation)->toBe($representation->coreRepresentation())
+        ->and($host->descriptor->format)->toBe($format)
+        ->and($host->descriptor->mediaType)->toBe($mediaType)
+        ->and($host->descriptor->filenameSuffix)->toBe($suffix)
+        ->and($host->descriptor->defaultDisposition)->toBe(BrowserContentDisposition::Inline)
+        ->and($host->disposition)->toBe(BrowserContentDisposition::Inline)
+        ->and($host->output->filename)->toEndWith($suffix)
+        ->and($host->output->inlineContent)->toContain($bodyCategory);
+})->with([
+    'browser JSON' => [
+        ExampleRepresentation::Json,
+        'browser/1.0',
+        'application/vnd.3neti.x-document.browser+json',
+        '.browser.json',
+        '"read_only": true',
+    ],
+    'semantic HTML' => [
+        ExampleRepresentation::SemanticHtml,
+        'browser-html/1.0',
+        'text/html; charset=utf-8',
+        '.html',
+        '<article data-document="document-1">',
+    ],
+    'styled HTML' => [
+        ExampleRepresentation::StyledHtml,
+        'browser-html-styled/1.0',
+        'text/html; charset=utf-8',
+        '.styled.html',
+        '<style>.document',
+    ],
+    'styled composition HTML' => [
+        ExampleRepresentation::StyledCompositionHtml,
+        'browser-composition-html-styled/1.0',
+        'text/html; charset=utf-8',
+        '.composition.styled.html',
+        'data-interaction="approve"',
+    ],
+]);
 
 it('supports framework-light direct factory usage with exact bytes', function () {
     $authorization = new RecordingDocumentAuthorizer;
@@ -61,14 +119,10 @@ it('supports framework-light direct factory usage with exact bytes', function ()
 it('delivers each allowlisted representation without changing its bytes', function (
     ExampleRepresentation $representation,
 ) {
-    $resolver = $this->app->make(HostDocumentRepresentationResolver::class);
+    $resolver = $this->app->make(FrozenDocumentRepresentationResolver::class);
     $response = $this->get('/example/documents/document-1?representation='.$representation->value);
     expect($resolver->invocations)->toBe(1);
-    $host = $resolver->resolve(
-        'document-1',
-        $representation,
-        BrowserContentDisposition::Inline,
-    );
+    $host = $resolver->lastResolvedResponse();
 
     $response->assertSuccessful()
         ->assertHeader('Content-Type', $host->output->mediaType)
