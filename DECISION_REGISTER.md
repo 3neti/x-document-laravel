@@ -1,3 +1,17 @@
 # Decision Register
 
-Architectural decisions begin with the package bootstrap.
+| Decision | Status | Consequence |
+|---|---|---|
+| [ADR-001](docs/adr/001-separate-laravel-delivery-package.md): Laravel delivery is a separate package | Accepted | Core remains framework-independent. |
+| [ADR-002](docs/adr/002-preserve-authoritative-representation-bytes.md): preserve authoritative bytes | Accepted | The adapter never renders or re-encodes output. |
+| [ADR-003](docs/adr/003-use-authoritative-strong-etags.md): use authoritative strong ETags | Accepted | Conditional delivery cannot invent a second identity. |
+
+## Deferred decisions
+
+- range requests;
+- download acceleration and streamed delivery;
+- configurable cache policy;
+- weak ETag comparison;
+- controller and route conveniences;
+- content-security policy integration;
+- Laravel 14 compatibility certification.
